@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Gamepad2, Store, Package, Coins, Skull, Heart, Sword, 
@@ -388,15 +388,32 @@ function getClawColor(rarity: string): string {
 // Directional Controls
 function Controls() {
   const { moveClaw, clawDropping, phase } = useGameStore()
-  
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const stopMoving = useCallback(() => {
+    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
+    if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null }
+  }, [])
+
+  const startMoving = useCallback((dx: number, dy: number) => {
+    if (clawDropping || phase !== 'playing') return
+    moveClaw(dx, dy)
+    timeoutRef.current = setTimeout(() => {
+      intervalRef.current = setInterval(() => moveClaw(dx, dy), 80)
+    }, 300)
+  }, [moveClaw, clawDropping, phase])
+
+  useEffect(() => () => stopMoving(), [stopMoving])
+
+  // Keyboard: single step per keydown, ignore OS key-repeat
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (phase !== 'playing') return
+    if (e.repeat || phase !== 'playing') return
     switch(e.key) {
-      case 'ArrowUp': case 'w': case 'W': moveClaw(0, -5); break
-      case 'ArrowDown': case 's': case 'S': moveClaw(0, 5); break
-      case 'ArrowLeft': case 'a': case 'A': moveClaw(-5, 0); break
-      case 'ArrowRight': case 'd': case 'D': moveClaw(5, 0); break
-      case ' ': case 'Enter': break // Drop is handled by button
+      case 'ArrowUp': case 'w': case 'W': moveClaw(0, -2); break
+      case 'ArrowDown': case 's': case 'S': moveClaw(0, 2); break
+      case 'ArrowLeft': case 'a': case 'A': moveClaw(-2, 0); break
+      case 'ArrowRight': case 'd': case 'D': moveClaw(2, 0); break
     }
   }, [moveClaw, phase])
 
@@ -405,64 +422,38 @@ function Controls() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [handleKeyDown])
 
+  const dirButton = (dx: number, dy: number, icon: React.ReactNode) => (
+    <motion.div whileTap={{ scale: 0.9 }}>
+      <Button
+        variant="outline"
+        size="icon"
+        className="h-14 w-14 rounded-xl active:scale-95 transition-transform bg-slate-700 hover:bg-slate-600 border-slate-500"
+        onMouseDown={() => startMoving(dx, dy)}
+        onMouseUp={stopMoving}
+        onMouseLeave={stopMoving}
+        onTouchStart={() => startMoving(dx, dy)}
+        onTouchEnd={stopMoving}
+        disabled={clawDropping}
+      >
+        {icon}
+      </Button>
+    </motion.div>
+  )
+
   return (
     <div className="flex flex-col items-center gap-2">
       <p className="text-xs text-muted-foreground mb-1">Arrow keys / WASD / Tap to move</p>
       <div className="grid grid-cols-3 gap-1.5">
         <div />
-        <motion.div whileTap={{ scale: 0.9 }}>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-14 w-14 rounded-xl active:scale-95 transition-transform bg-slate-700 hover:bg-slate-600 border-slate-500"
-            onTouchStart={() => moveClaw(0, -5)}
-            onMouseDown={() => moveClaw(0, -5)}
-            disabled={clawDropping}
-          >
-            <ChevronUp className="h-6 w-6" />
-          </Button>
-        </motion.div>
+        {dirButton(0, -2, <ChevronUp className="h-6 w-6" />)}
         <div />
-        <motion.div whileTap={{ scale: 0.9 }}>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-14 w-14 rounded-xl active:scale-95 transition-transform bg-slate-700 hover:bg-slate-600 border-slate-500"
-            onTouchStart={() => moveClaw(-5, 0)}
-            onMouseDown={() => moveClaw(-5, 0)}
-            disabled={clawDropping}
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </Button>
-        </motion.div>
+        {dirButton(-2, 0, <ChevronLeft className="h-6 w-6" />)}
         <div className="h-14 w-14 rounded-xl bg-slate-800 flex items-center justify-center border border-slate-600">
           <Gamepad2 className="h-6 w-6 text-amber-400" />
         </div>
-        <motion.div whileTap={{ scale: 0.9 }}>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-14 w-14 rounded-xl active:scale-95 transition-transform bg-slate-700 hover:bg-slate-600 border-slate-500"
-            onTouchStart={() => moveClaw(5, 0)}
-            onMouseDown={() => moveClaw(5, 0)}
-            disabled={clawDropping}
-          >
-            <ChevronRight className="h-6 w-6" />
-          </Button>
-        </motion.div>
+        {dirButton(2, 0, <ChevronRight className="h-6 w-6" />)}
         <div />
-        <motion.div whileTap={{ scale: 0.9 }}>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-14 w-14 rounded-xl active:scale-95 transition-transform bg-slate-700 hover:bg-slate-600 border-slate-500"
-            onTouchStart={() => moveClaw(0, 5)}
-            onMouseDown={() => moveClaw(0, 5)}
-            disabled={clawDropping}
-          >
-            <ChevronDown className="h-6 w-6" />
-          </Button>
-        </motion.div>
+        {dirButton(0, 2, <ChevronDown className="h-6 w-6" />)}
         <div />
       </div>
     </div>

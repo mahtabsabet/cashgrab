@@ -173,7 +173,7 @@ function ClawMachine() {
       {/* Claw machine background image */}
       <div 
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: 'url(/claw-machine.png)' }}
+        style={{ backgroundImage: `url(${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/claw-machine.png)` }}
       />
       
       {/* Dark overlay to make toys more visible */}

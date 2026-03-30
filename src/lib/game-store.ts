@@ -324,12 +324,12 @@ export const useGameStore = create<GameState>()(
       collectedToys: [],
       
       phase: 'playing',
-      
-      clawPosition: { x: 50, y: 10 },
+
+      clawPosition: { x: 50, y: 30 },
       clawMoving: false,
       clawDropping: false,
       grabbedToy: null,
-      
+
       toysInMachine: [], // Empty for SSR, populated on client
       
       currentBoss: null,
@@ -373,15 +373,15 @@ export const useGameStore = create<GameState>()(
     setTimeout(() => {
       const { toysInMachine, currentClaw } = get()
       
-      // Find toys near the claw position
+      // Find toys near the claw position (coordinates match visual rendering in page.tsx)
       const nearByToys = toysInMachine.filter((toy, index) => {
-        const toyX = 15 + (index % 4) * 25
-        const toyY = 40 + Math.floor(index / 4) * 20
+        const toyX = 12 + (index % 4) * 26
+        const toyY = 30 + Math.floor(index / 4) * 22
         const distance = Math.sqrt(
-          Math.pow(toyX - state.clawPosition.x, 2) + 
+          Math.pow(toyX - state.clawPosition.x, 2) +
           Math.pow(toyY - state.clawPosition.y, 2)
         )
-        return distance < 20 * currentClaw.range
+        return distance < 28 * currentClaw.range
       })
       
       if (nearByToys.length > 0 && Math.random() < currentClaw.dropChance) {
@@ -534,7 +534,7 @@ export const useGameStore = create<GameState>()(
       ownedClaws: [AVAILABLE_CLAWS[0]],
       collectedToys: [],
       phase: 'playing',
-      clawPosition: { x: 50, y: 10 },
+      clawPosition: { x: 50, y: 30 },
       clawMoving: false,
       clawDropping: false,
       grabbedToy: null,
